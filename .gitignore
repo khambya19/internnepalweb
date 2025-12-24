@@ -1,0 +1,60 @@
+# Node.js / General
+node_modules/
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+.nyc_output/
+
+# Dependency directories (if you ever nest them)
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backend-specific builds (if any)
+backend/dist/
+
+# Frontend build (Vite/Vue)
+frontend/dist/
+frontend/.vite/
+
+# Package lock conflicts (optional – keep only one)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
