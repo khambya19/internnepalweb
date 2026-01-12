@@ -1,0 +1,16 @@
+<!-- InternNepal Logo: Modern, geometric, bold, inspired by the attached style -->
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="internnepal-alphabet-gradient2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#06b6d4"/>
+      <stop offset="0.5" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#a21caf"/>
+    </linearGradient>
+  </defs>
+  <!-- Geometric N: two triangles and a parallelogram, mountain peak in negative space -->
+  <polygon points="10,54 10,10 28,32" fill="url(#internnepal-alphabet-gradient2)"/>
+  <polygon points="54,54 54,10 36,32" fill="url(#internnepal-alphabet-gradient2)"/>
+  <polygon points="28,32 36,32 32,38" fill="#fff"/>
+  <!-- Optional: tech dot at the peak -->
+  <circle cx="32" cy="36" r="2.5" fill="#06b6d4"/>
+</svg>
