@@ -1,8 +1,10 @@
 import LoginSelector from '../../components/forms/LoginSelector';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import loginIllustration from '../../assets/images/register-illustration.svg'; // Use your own illustration or a blue block
 
 const LoginPage = () => {
+  const location = useLocation();
+  const successMsg = location.state?.success;
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-violet-50 py-8">
       <div className="w-full max-w-5xl h-[600px] flex bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -15,6 +17,7 @@ const LoginPage = () => {
               <p className="text-base text-gray-700 font-medium mb-1">Find IT internships. Grow your career.</p>
               <p className="text-sm text-gray-500">Nepal's #1 platform for students and companies to connect for real-world experience.</p>
             </div>
+            {successMsg && <div className="text-green-600 text-base mb-4 text-center">{successMsg}</div>}
             <LoginSelector />
           </div>
         </div>

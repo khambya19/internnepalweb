@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { AuthContext } from '../../context/AuthContext';
 import logoAlphabet from '../../assets/images/internnepal-logo-alphabet.svg';
 import { Link } from 'react-router-dom';
 import { Menu, X, ChevronDown } from 'lucide-react';
@@ -6,6 +7,7 @@ import { Menu, X, ChevronDown } from 'lucide-react';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // For mobile dropdown toggle
+  const { user, logout } = useContext(AuthContext);
 
   return (
     <nav className="bg-white shadow-lg fixed top-0 left-0 right-0 z-50 transition-all duration-300">
@@ -14,22 +16,57 @@ const Navbar = () => {
           
           {/* 1. Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="flex items-center gap-2">
-              <img
-                src={logoAlphabet}
-                alt="InternNepal Logo"
-                className="w-9 h-9 md:w-10 md:h-10 drop-shadow-sm"
-                style={{ marginRight: '0.25rem' }}
-              />
-              <span className="text-3xl font-bold text-blue-600 tracking-tight">
-                InternNepal
-              </span>
-            </Link>
+            {(() => {
+              const role = user?.role?.toLowerCase() || '';
+              let dashboardPath = '/';
+              if (role === 'student') dashboardPath = '/student-dashboard';
+              else if (role === 'company') dashboardPath = '/company-dashboard';
+              else if (role === 'admin') dashboardPath = '/dashboard';
+              return (
+                <Link to={role ? dashboardPath : '/'} className="flex items-center gap-2">
+                  <img
+                    src={logoAlphabet}
+                    alt="InternNepal Logo"
+                    className="w-9 h-9 md:w-10 md:h-10 drop-shadow-sm"
+                    style={{ marginRight: '0.25rem' }}
+                  />
+                  <span className="text-3xl font-bold text-blue-600 tracking-tight">
+                    InternNepal
+                  </span>
+                </Link>
+              );
+            })()}
           </div>
 
           {/* 2. Desktop Navigation */}
           <div className="hidden md:flex items-center gap-10">
-            <Link to="/" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Home</Link>
+            {/* Only show navigation links if not on dashboard */}
+            {(() => {
+              const role = user?.role?.toLowerCase() || '';
+              const path = window.location.pathname;
+              const isDashboard = [
+                '/student-dashboard',
+                '/company-dashboard',
+                '/dashboard'
+              ].includes(path);
+              if (isDashboard) {
+                return null;
+              }
+              if (!role) {
+                return <Link to="/" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Home</Link>;
+              }
+              // Show Dashboard link if logged in and not on dashboard
+              if (role === 'student') {
+                return <Link to="/student-dashboard" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Dashboard</Link>;
+              }
+              if (role === 'company') {
+                return <Link to="/company-dashboard" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Dashboard</Link>;
+              }
+              if (role === 'admin') {
+                return <Link to="/dashboard" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Dashboard</Link>;
+              }
+              return <Link to="/" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Home</Link>;
+            })()}
             <Link to="/jobs" className="text-slate-500 hover:text-cyan-600 font-medium transition-all duration-200 transform hover:scale-105 active:scale-95">Find Internships</Link>
             {/* <Link to="/alerts" className="text-gray-600 hover:text-blue-600 font-medium transition">Job Alerts</Link> */}
             
@@ -56,18 +93,51 @@ const Navbar = () => {
 
             {/* Desktop Auth Buttons */}
             <div className="flex items-center gap-6 ml-8">
-              <Link
-                to="/login"
-                className="border-2 border-cyan-600 text-cyan-600 font-semibold bg-white shadow-sm px-6 py-2 rounded-lg transition-all duration-200 transform hover:bg-cyan-600 hover:text-white hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/register"
-                className="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-semibold shadow-md transition-all duration-200 transform hover:bg-violet-600 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-400"
-              >
-                Sign Up
-              </Link>
+              {(() => {
+                const role = user?.role?.toLowerCase() || '';
+                const path = window.location.pathname;
+                const isDashboard = [
+                  '/student-dashboard',
+                  '/company-dashboard',
+                  '/dashboard'
+                ].includes(path);
+                if (role && isDashboard) {
+                  // On dashboard: show welcome and logout only
+                  return <>
+                    <span className="text-slate-600 font-medium mr-4">Welcome, {role.charAt(0).toUpperCase() + role.slice(1)}!</span>
+                    <button
+                      onClick={logout}
+                      className="border-2 border-red-500 text-red-500 font-semibold bg-white shadow-sm px-6 py-2 rounded-lg transition-all duration-200 transform hover:bg-red-500 hover:text-white hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400"
+                    >
+                      Log Out
+                    </button>
+                  </>;
+                }
+                if (role) {
+                  // Not on dashboard: show logout only
+                  return <button
+                    onClick={logout}
+                    className="border-2 border-red-500 text-red-500 font-semibold bg-white shadow-sm px-6 py-2 rounded-lg transition-all duration-200 transform hover:bg-red-500 hover:text-white hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-400"
+                  >
+                    Log Out
+                  </button>;
+                }
+                // Not logged in
+                return <>
+                  <Link
+                    to="/login"
+                    className="border-2 border-cyan-600 text-cyan-600 font-semibold bg-white shadow-sm px-6 py-2 rounded-lg transition-all duration-200 transform hover:bg-cyan-600 hover:text-white hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="bg-blue-600 text-white px-8 py-2.5 rounded-lg font-semibold shadow-md transition-all duration-200 transform hover:bg-violet-600 hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                  >
+                    Sign Up
+                  </Link>
+                </>;
+              })()}
             </div>
           </div>
 

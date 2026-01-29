@@ -1,9 +1,11 @@
 import React from 'react';
 import LoginForm from '../../components/forms/LoginForm';
 import loginIllustration from '../../assets/images/login-illustration.svg';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Login = () => {
+  const location = useLocation();
+  const successMsg = location.state?.success;
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-violet-50 overflow-auto pt-20 pb-8">
       <div className="w-full md:w-[80vw] flex flex-col md:flex-row bg-white rounded-lg shadow-2xl overflow-hidden max-w-7xl mx-auto">
@@ -16,6 +18,7 @@ const Login = () => {
           <span className="text-2xl font-semibold text-gray-900 mb-2 tracking-tight">INTERNNEPAL</span>
           <h1 className="text-4xl font-extrabold text-gray-900 mb-3 leading-tight">Sign in to your account</h1>
           <p className="text-gray-500 text-lg mb-8">Access jobs, internships, and career opportunities tailored for you.</p>
+          {successMsg && <div className="text-green-600 text-base mb-4">{successMsg}</div>}
           <LoginForm />
         </div>
       </div>

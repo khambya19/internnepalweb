@@ -23,6 +23,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Mount authentication routes
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'InternNepal API is live!' });
@@ -46,8 +50,8 @@ const startServer = async () => {
         }
       });
 
-    await sequelize.sync({ force: false });
-    console.log('Database synced');
+    await sequelize.sync({ alter: true });
+    console.log('Database synced (alter:true)');
 
     console.log('Models loaded:', Object.keys(models));
 
