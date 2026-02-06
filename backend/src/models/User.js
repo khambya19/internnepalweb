@@ -6,13 +6,21 @@ const User = sequelize.define("User", {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        is: {
-          args: [/^(96|97|98)[0-9]{8}$/],
-          msg: 'Phone number must be 10 digits and start with 96, 97, or 98',
-        },
-        len: {
-          args: [10, 10],
-          msg: 'Phone number must be exactly 10 digits',
+        isValidPhone(value) {
+          // Accept mobile: +977 followed by 10 digits starting with 96/97/98
+          const mobileWithPrefix = /^\+977(96|97|98)[0-9]{8}$/.test(value);
+          // Accept mobile without prefix: 10 digits starting with 96/97/98
+          const mobileWithout = /^(96|97|98)[0-9]{8}$/.test(value);
+          // Accept landline with +977 prefix: +977 followed by 9 digits NOT starting with 96/97/98
+          const landlineWithPrefix = /^\+977(?!9[678])[0-9]{7,9}$/.test(value);
+          // Accept landline without prefix: 9 digits NOT starting with 96/97/98
+          const landlineWithout = /^(?!9[678])[0-9]{9}$/.test(value);
+
+          if (!mobileWithPrefix && !mobileWithout && !landlineWithPrefix && !landlineWithout) {
+            throw new Error(
+              'Phone must be a valid 10-digit mobile number (starting with 96/97/98) or a 9-digit landline number (not starting with 96/97/98)'
+            );
+          }
         },
       },
     },
@@ -44,40 +52,26 @@ const User = sequelize.define("User", {
       }
     }
   },
-  // Password validation is enforced both in frontend (zod) and backend (Sequelize)
+  // Password is validated by Joi in the controller BEFORE hashing.
+  // The value stored here is the bcrypt hash, not the raw password.
   password: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: {
-      isStrongPassword(value) {
-        if (!value) {
-          throw new Error('Password is required.');
-        }
-        if (value.length < 8) {
-          throw new Error('Password must be at least 8 characters.');
-        }
-        if (!/[A-Z]/.test(value)) {
-          throw new Error('Password must include an uppercase letter.');
-        }
-        if (!/[a-z]/.test(value)) {
-          throw new Error('Password must include a lowercase letter.');
-        }
-        if (!/[0-9]/.test(value)) {
-          throw new Error('Password must include a number.');
-        }
-        if (!/[^A-Za-z0-9]/.test(value)) {
-          throw new Error('Password must include a special character.');
-        }
-      }
-    }
   },
   role: {
     type: DataTypes.STRING,
-    defaultValue: "user"
+    defaultValue: "user",
+    validate: {
+      isIn: [["user", "student", "company", "admin", "superadmin"]]
+    }
   },
   isVerified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
   otp: {
     type: DataTypes.STRING,
@@ -86,6 +80,20 @@ const User = sequelize.define("User", {
   otpExpires: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  otpAttempts: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+  otpBlockedUntil: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  tokenVersion: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   }
 });
 

@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { User, Mail, Phone, Lock } from 'lucide-react';
+import { User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 const passwordRequirements =
-  'Password must be at least 8 characters and contain at least 3 of these 4 categories: lowercase letters, uppercase letters, numbers, special characters.';
+  'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.';
 
 const studentSchema = z
   .object({
@@ -19,13 +20,12 @@ const studentSchema = z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .refine((val) => {
-        const categories = [
-          /[a-z]/.test(val),
-          /[A-Z]/.test(val),
-          /[0-9]/.test(val),
-          /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/~`\\]/.test(val),
-        ];
-        return categories.filter(Boolean).length >= 3;
+        return (
+          /[a-z]/.test(val) &&
+          /[A-Z]/.test(val) &&
+          /[0-9]/.test(val) &&
+          /[^A-Za-z0-9]/.test(val)
+        );
       }, { message: passwordRequirements }),
     confirmPassword: z.string(),
   })
@@ -65,17 +65,16 @@ const StudentRegisterForm = () => {
       lowercase: /[a-z]/.test(password),
       uppercase: /[A-Z]/.test(password),
       number: /[0-9]/.test(password),
-      special: /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/~`\\]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
     };
 
-    const categoryCount = [
-      checks.lowercase,
-      checks.uppercase,
-      checks.number,
-      checks.special,
-    ].filter(Boolean).length;
-
-    setPasswordValid(checks.length && categoryCount >= 3);
+    setPasswordValid(
+      checks.length &&
+      checks.lowercase &&
+      checks.uppercase &&
+      checks.number &&
+      checks.special
+    );
   }, [password]);
 
   const onSubmit = async (data) => {
@@ -101,34 +100,35 @@ const StudentRegisterForm = () => {
       if (result.success) {
         navigate('/verify-email', { state: { email: data.email } });
       } else {
-        alert(result.message || 'Registration failed');
+        toast.error(result.message || 'Registration failed. Please check your details and try again.');
       }
     } catch (err) {
-      console.error(err);
-      alert(err.message || 'Server error. Please try again.');
+      toast.error(err.message || 'Unable to register right now. Please try again in a moment.');
     }
   };
 
   return (
     <div className="w-full h-full flex flex-col flex-1">
-      <h2 className="text-lg font-bold text-gray-800 mb-1">Create Student Account</h2>
-      <p className="text-gray-600 mb-4 text-sm">
+      <h2 className="mb-1 text-lg font-bold text-gray-800 dark:text-white">Create Student Account</h2>
+      <p className="mb-4 text-sm text-gray-600 dark:text-slate-300">
         Sign up to find IT internships and grow your career in Nepal.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 pb-2 flex-1">
         {/* Full Name */}
         <div className="mb-6">
+          <label htmlFor="fullName" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Full Name</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
-              ${errors.fullName ? 'border-red-500 bg-red-50' : (watch('fullName') && !errors.fullName ? 'border-green-500 bg-green-50' : 'border-gray-300')}
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
+              ${errors.fullName ? 'border-red-500 bg-red-50 dark:bg-red-950/30' : (watch('fullName') && !errors.fullName ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-gray-300 dark:border-slate-600')}
             `}
           >
-            <User className="text-gray-400 mr-2" size={20} />
+            <User className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="fullName"
               type="text"
               {...register('fullName')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Full Name"
               autoComplete="name"
             />
@@ -140,16 +140,18 @@ const StudentRegisterForm = () => {
 
         {/* Email */}
         <div className="mb-6">
+          <label htmlFor="email" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Email</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
-              ${errors.email ? 'border-red-500 bg-red-50' : (watch('email') && !errors.email ? 'border-green-500 bg-green-50' : 'border-gray-300')}
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
+              ${errors.email ? 'border-red-500 bg-red-50 dark:bg-red-950/30' : (watch('email') && !errors.email ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-gray-300 dark:border-slate-600')}
             `}
           >
-            <Mail className="text-gray-400 mr-2" size={20} />
+            <Mail className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="email"
               type="email"
               {...register('email')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Email"
               autoComplete="email"
             />
@@ -161,13 +163,15 @@ const StudentRegisterForm = () => {
 
         {/* Phone */}
         <div className="mb-6">
+          <label htmlFor="phone" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Phone Number</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
-              ${errors.phone ? 'border-red-500 bg-red-50' : (watch('phone') && !errors.phone ? 'border-green-500 bg-green-50' : 'border-gray-300')}
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
+              ${errors.phone ? 'border-red-500 bg-red-50 dark:bg-red-950/30' : (watch('phone') && !errors.phone ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-gray-300 dark:border-slate-600')}
             `}
           >
-            <Phone className="text-gray-400 mr-2" size={20} />
+            <Phone className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="phone"
               type="text"
               {...register('phone', {
                 onChange: (e) => {
@@ -175,7 +179,7 @@ const StudentRegisterForm = () => {
                   setValue('phone', digits, { shouldValidate: true });
                 },
               })}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Phone Number (e.g. 9841234567)"
               autoComplete="tel"
               inputMode="numeric"
@@ -189,59 +193,35 @@ const StudentRegisterForm = () => {
 
         {/* Password */}
         <div className="mb-6">
+          <label htmlFor="password" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Password</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${
               errors.password
-                ? 'border-red-500 bg-red-50'
+                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
                 : passwordValid
-                ? 'border-green-500 bg-green-50'
-                : 'border-gray-300'
+                ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
+                : 'border-gray-300 dark:border-slate-600'
             }`}
           >
-            <Lock className="text-gray-400 mr-2" size={20} />
+            <Lock className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="password"
               type={showPassword ? 'text' : 'password'}
               {...register('password')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Password"
               autoComplete="new-password"
             />
             <button
               type="button"
-              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none"
+              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none dark:text-slate-400 dark:hover:text-blue-400"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.96 9.96 0 012.928-7.072m1.414 1.414A7.963 7.963 0 0012 5c4.418 0 8 3.582 8 8 0 1.657-.507 3.197-1.378 4.472M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378"
-                  />
-                </svg>
+                <Eye size={20} />
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378"
-                  />
-                </svg>
+                <EyeOff size={20} />
               )}
             </button>
           </div>
@@ -249,82 +229,46 @@ const StudentRegisterForm = () => {
           </span>
 
           {/* Password checklist */}
-          <div className="mt-3 p-3 bg-gray-50 rounded-md border text-xs">
-            <p className="font-medium text-gray-700 mb-2">Password must:</p>
+          <div className="mt-3 rounded-md border bg-gray-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 font-medium text-gray-700 dark:text-slate-200">Password must:</p>
             <ul className="space-y-1.5">
-              <li className={`flex items-center gap-2 ${password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                 At least 8 characters
-              </li>
-              <li className={`flex items-center gap-2 ${/[a-z]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
-                 Lowercase letter
-              </li>
-              <li className={`flex items-center gap-2 ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
-                 Uppercase letter
-              </li>
-              <li className={`flex items-center gap-2 ${/[0-9]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
-                 Number
-              </li>
-              <li className={`flex items-center gap-2 ${/[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/~`\\]/.test(password) ? 'text-green-600' : 'text-gray-500'}`}>
-                 Special character
-              </li>
+              <li className={`flex items-center gap-2 ${password.length >= 8 ? 'text-green-600' : 'text-gray-500 dark:text-slate-400'}`}>At least 8 characters</li>
+              <li className={`flex items-center gap-2 ${/[a-z]/.test(password) ? 'text-green-600' : 'text-gray-500 dark:text-slate-400'}`}>Lowercase letter</li>
+              <li className={`flex items-center gap-2 ${/[A-Z]/.test(password) ? 'text-green-600' : 'text-gray-500 dark:text-slate-400'}`}>Uppercase letter</li>
+              <li className={`flex items-center gap-2 ${/[0-9]/.test(password) ? 'text-green-600' : 'text-gray-500 dark:text-slate-400'}`}>Number</li>
+              <li className={`flex items-center gap-2 ${/[^A-Za-z0-9]/.test(password) ? 'text-green-600' : 'text-gray-500 dark:text-slate-400'}`}>Special character</li>
             </ul>
-            <p className="mt-2 text-gray-500 text-[11px]">
-              Need <strong>at least 3</strong> of the last 4 categories
-            </p>
+            <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">All <strong>five</strong> requirements must be met</p>
           </div>
         </div>
 
         {/* Confirm Password */}
         <div className="mb-10">
+          <label htmlFor="confirmPassword" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Confirm Password</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
-              ${errors.confirmPassword ? 'border-red-500 bg-red-50' : (watch('confirmPassword') && !errors.confirmPassword ? 'border-green-500 bg-green-50' : 'border-gray-300')}
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500
+              ${errors.confirmPassword ? 'border-red-500 bg-red-50 dark:bg-red-950/30' : (watch('confirmPassword') && !errors.confirmPassword ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-gray-300 dark:border-slate-600')}
             `}
           >
-            <Lock className="text-gray-400 mr-2" size={20} />
+            <Lock className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="confirmPassword"
               type={showConfirmPassword ? 'text' : 'password'}
               {...register('confirmPassword')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Confirm Password"
               autoComplete="new-password"
             />
             <button
               type="button"
-              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none"
+              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none dark:text-slate-400 dark:hover:text-blue-400"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
             >
               {showConfirmPassword ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.96 9.96 0 012.928-7.072m1.414 1.414A7.963 7.963 0 0012 5c4.418 0 8 3.582 8 8 0 1.657-.507 3.197-1.378 4.472M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378"
-                  />
-                </svg>
+                <Eye size={20} />
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378"
-                  />
-                </svg>
+                <EyeOff size={20} />
               )}
             </button>
           </div>
@@ -343,12 +287,12 @@ const StudentRegisterForm = () => {
       </form>
 
       <div className="flex-grow"></div>
-      <p className="text-center text-gray-600 mt-3 text-xs">
+      <p className="mt-3 text-center text-xs text-gray-600 dark:text-slate-300">
         Already have an account?{' '}
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="text-blue-600 hover:underline font-medium"
+          className="font-medium text-blue-600 hover:underline dark:text-blue-400"
         >
           Log in
         </button>

@@ -1,24 +1,50 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const router = express.Router();
-const { login, register, requestPasswordReset, resetPassword, verifyOtp, resendOtp, verifyResetOtp } = require("../controllers/authController");
-// Route: http://localhost:5050/api/auth/verify-reset-otp
-router.post("/verify-reset-otp", verifyResetOtp);
-// Route: http://localhost:5050/api/auth/resend-otp
-router.post("/resend-otp", resendOtp);
+const { protect } = require("../middleware/auth");
+const {
+  login,
+  register,
+  requestPasswordReset,
+  resetPassword,
+  verifyOtp,
+  resendOtp,
+  verifyResetOtp,
+  changePassword,
+  getMe,
+  logout,
+  deleteAccount,
+} = require("../controllers/authController");
 
-// Route: http://localhost:5050/api/auth/register
-router.post("/register", register);
+const authAttemptLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 10 : 1000, // 10 in production, relaxed for local development
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many attempts. Please try again later." },
+});
 
-// Route: http://localhost:5050/api/auth/login
-router.post("/login", login);
-// Route: http://localhost:5050/api/auth/verify-otp
-router.post("/verify-otp", verifyOtp);
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 5 : 300, // 5 in production, relaxed for local development
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many OTP attempts. Please try again later." },
+});
+
+// ── Public Routes (No token needed) ───────────────────────
+router.post("/register", authAttemptLimiter, register);
+router.post("/login", authAttemptLimiter, login);
+router.post("/verify-otp", otpLimiter, verifyOtp);
+router.post("/resend-otp", otpLimiter, resendOtp);
+router.post("/verify-reset-otp", otpLimiter, verifyResetOtp);
+router.post("/request-password-reset", otpLimiter, requestPasswordReset);
+router.post("/reset-password", otpLimiter, resetPassword);
+
+// ── Protected Routes (Token required) ────────────────────
+router.get("/me", protect, getMe);
+router.delete("/me", protect, deleteAccount);
+router.post("/change-password", protect, authAttemptLimiter, changePassword);
+router.post("/logout", protect, logout);
 
 module.exports = router;
-
-// Password reset endpoints
-// Route: http://localhost:5050/api/auth/request-password-reset
-router.post("/request-password-reset", requestPasswordReset);
-
-// Route: http://localhost:5050/api/auth/reset-password
-router.post("/reset-password", resetPassword);
