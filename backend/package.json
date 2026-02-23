@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "npx nodemon src/server.js",
-    "test": "jest"
+    "test": "jest",
+    "fix-postgres": "node scripts/fix-postgres-app-auth.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
