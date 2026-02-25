@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Building2, Mail, Phone, Globe, Lock } from 'lucide-react';
+import { Building2, Mail, Phone, Globe, Lock, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 const passwordRequirements =
-  'Password must be at least 8 characters and contain at least 3 of these 4 categories: lowercase letters, uppercase letters, numbers, special characters.';
+  'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.';
 
 const companySchema = z
   .object({
@@ -15,19 +16,27 @@ const companySchema = z
     email: z.string().email('Enter a valid email'),
     phone: z
       .string()
-      .regex(/^[0-9]{9}$/, 'Contact number must be a 9-digit landline number'),
+      .refine(
+        (val) => {
+          // Must be exactly 9 digits and NOT start with 96, 97, or 98 (those are mobile)
+          return /^[0-9]{9}$/.test(val) && !/^(96|97|98)/.test(val);
+        },
+        {
+          message:
+            'Contact number must be a 9-digit landline number (must not start with 96, 97, or 98)',
+        }
+      ),
     website: z.string().url('Enter a valid URL').optional().or(z.literal('')),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
       .refine((val) => {
-        const categories = [
-          /[a-z]/.test(val),
-          /[A-Z]/.test(val),
-          /[0-9]/.test(val),
-          /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/~`\\]/.test(val),
-        ];
-        return categories.filter(Boolean).length >= 3;
+        return (
+          /[a-z]/.test(val) &&
+          /[A-Z]/.test(val) &&
+          /[0-9]/.test(val) &&
+          /[^A-Za-z0-9]/.test(val)
+        );
       }, { message: passwordRequirements }),
     confirmPassword: z.string(),
   })
@@ -67,17 +76,16 @@ const CompanyRegisterForm = () => {
       lowercase: /[a-z]/.test(password),
       uppercase: /[A-Z]/.test(password),
       number: /[0-9]/.test(password),
-      special: /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/~`\\]/.test(password),
+      special: /[^A-Za-z0-9]/.test(password),
     };
 
-    const categoryCount = [
-      checks.lowercase,
-      checks.uppercase,
-      checks.number,
-      checks.special,
-    ].filter(Boolean).length;
-
-    setPasswordValid(checks.length && categoryCount >= 3);
+    setPasswordValid(
+      checks.length &&
+      checks.lowercase &&
+      checks.uppercase &&
+      checks.number &&
+      checks.special
+    );
   }, [password]);
 
   const onSubmit = async (data) => {
@@ -104,19 +112,18 @@ const CompanyRegisterForm = () => {
       if (result.success) {
         navigate('/verify-email', { state: { email: data.email } });
       } else {
-        alert(result.message || 'Registration failed');
+        toast.error(result.message || 'Registration failed. Please verify your company details and try again.');
       }
     } catch (err) {
-      console.error(err);
-      alert(err.message || 'Server error. Please try again.');
+      toast.error(err.message || 'Unable to register right now. Please try again in a moment.');
     }
   };
 
   // Helper to decide input border style
   const getBorderClass = (fieldError, isTouched, isValid = true) => {
-    if (fieldError) return 'border-red-500 bg-red-50';
-    if (isTouched && isValid) return 'border-green-500 bg-green-50';
-    return 'border-gray-300';
+    if (fieldError) return 'border-red-500 bg-red-50 dark:bg-red-950/30';
+    if (isTouched && isValid) return 'border-green-500 bg-green-50 dark:bg-green-950/30';
+    return 'border-gray-300 dark:border-slate-600';
   };
 
   const companyName = watch('companyName', '');
@@ -127,26 +134,28 @@ const CompanyRegisterForm = () => {
 
   return (
     <div className="w-full h-full flex flex-col flex-1">
-      <h2 className="text-lg font-bold text-gray-800 mb-1">Create Company Account</h2>
-      <p className="text-gray-600 mb-4 text-sm">
+      <h2 className="mb-1 text-lg font-bold text-gray-800 dark:text-white">Create Company Account</h2>
+      <p className="mb-4 text-sm text-gray-600 dark:text-slate-300">
         Post IT internships and connect with talented students in Nepal.
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 pb-2 flex-1">
         {/* Company Name */}
         <div className="mb-6">
+          <label htmlFor="companyName" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Company Name</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
               errors.companyName,
               touchedFields.companyName,
               companyName.trim().length >= 2
             )}`}
           >
-            <Building2 className="text-gray-400 mr-2" size={20} />
+            <Building2 className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="companyName"
               type="text"
               {...register('companyName')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Company Name"
               autoComplete="organization"
             />
@@ -158,18 +167,20 @@ const CompanyRegisterForm = () => {
 
         {/* Email */}
         <div className="mb-6">
+          <label htmlFor="email" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Official Email</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
               errors.email,
               touchedFields.email,
               !!email && !errors.email
             )}`}
           >
-            <Mail className="text-gray-400 mr-2" size={20} />
+            <Mail className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="email"
               type="email"
               {...register('email')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Official Email"
               autoComplete="email"
             />
@@ -181,16 +192,18 @@ const CompanyRegisterForm = () => {
 
         {/* Phone */}
         <div className="mb-6">
+          <label htmlFor="phone" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Landline Number</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
               errors.phone,
               touchedFields.phone,
               phone.length === 9 && !errors.phone
             )}`}
           >
-            <Phone className="text-gray-400 mr-2" size={20} />
-            <span className="text-gray-500 font-medium select-none">+977</span>
+            <Phone className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
+            <span className="select-none font-medium text-gray-500 dark:text-slate-400">+977</span>
             <input
+              id="phone"
               type="text"
               {...register('phone', {
                 onChange: (e) => {
@@ -198,7 +211,7 @@ const CompanyRegisterForm = () => {
                   setValue('phone', digits, { shouldValidate: true });
                 },
               })}
-              className="flex-1 bg-transparent outline-none text-sm ml-2"
+              className="ml-2 flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="9-digit Landline (e.g. 123456789)"
               autoComplete="tel"
               maxLength={9}
@@ -212,18 +225,20 @@ const CompanyRegisterForm = () => {
 
         {/* Website (optional) */}
         <div className="mb-6">
+          <label htmlFor="website" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Website (optional)</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
               errors.website,
               touchedFields.website,
               website && !errors.website
             )}`}
           >
-            <Globe className="text-gray-400 mr-2" size={20} />
+            <Globe className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="website"
               type="url"
               {...register('website')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Website (optional)"
               autoComplete="url"
             />
@@ -235,39 +250,35 @@ const CompanyRegisterForm = () => {
 
         {/* Password */}
         <div className="mb-6">
+          <label htmlFor="password" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Password</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${
               errors.password
-                ? 'border-red-500 bg-red-50'
+                ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
                 : passwordValid
-                ? 'border-green-500 bg-green-50'
-                : 'border-gray-300'
+                ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
+                : 'border-gray-300 dark:border-slate-600'
             }`}
           >
-            <Lock className="text-gray-400 mr-2" size={20} />
+            <Lock className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="password"
               type={showPassword ? 'text' : 'password'}
               {...register('password')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Password"
               autoComplete="new-password"
             />
             <button
               type="button"
-              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none"
+              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none dark:text-slate-400 dark:hover:text-blue-400"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.96 9.96 0 012.928-7.072m1.414 1.414A7.963 7.963 0 0012 5c4.418 0 8 3.582 8 8 0 1.657-.507 3.197-1.378 4.472M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378" />
-                </svg>
+                <Eye size={20} />
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378" />
-                </svg>
+                <EyeOff size={20} />
               )}
             </button>
           </div>
@@ -276,54 +287,48 @@ const CompanyRegisterForm = () => {
           </span>
 
          
-          <div className="mt-3 p-3 bg-gray-50 rounded-md border text-xs">
-            <p className="font-medium text-gray-700 mb-2">Password must:</p>
+          <div className="mt-3 rounded-md border bg-gray-50 p-3 text-xs dark:border-slate-700 dark:bg-slate-800">
+            <p className="mb-2 font-medium text-gray-700 dark:text-slate-200">Password must:</p>
             <ul className="space-y-1.5">
-              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400' : password.length >= 8 ? 'text-green-600' : 'text-red-500'}`}>At least 8 characters</li>
-              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400' : /[a-z]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Lowercase letter</li>
-              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400' : /[A-Z]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Uppercase letter</li>
-              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400' : /[0-9]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Number</li>
-              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400' : /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/~`\\]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Special character</li>
+              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400 dark:text-slate-500' : password.length >= 8 ? 'text-green-600' : 'text-red-500'}`}>At least 8 characters</li>
+              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400 dark:text-slate-500' : /[a-z]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Lowercase letter</li>
+              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400 dark:text-slate-500' : /[A-Z]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Uppercase letter</li>
+              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400 dark:text-slate-500' : /[0-9]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Number</li>
+              <li className={`flex items-center gap-2 ${!password ? 'text-gray-400 dark:text-slate-500' : /[^A-Za-z0-9]/.test(password) ? 'text-green-600' : 'text-red-500'}`}>Special character</li>
             </ul>
-            <p className="mt-2 text-gray-500 text-[11px]">
-              Need <strong>at least 3</strong> of the last 4 categories
-            </p>
+            <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-400">All <strong>five</strong> requirements must be met</p>
           </div>
         </div>
 
        
         <div className="mb-10">
+          <label htmlFor="confirmPassword" className="block mb-1 text-sm font-medium text-gray-700 dark:text-slate-200">Confirm Password</label>
           <div
-            className={`flex items-center bg-white border rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
+            className={`flex items-center bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-md px-3 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 ${getBorderClass(
               errors.confirmPassword,
               touchedFields.confirmPassword,
               confirmPassword && !errors.confirmPassword
             )}`}
           >
-            <Lock className="text-gray-400 mr-2" size={20} />
+            <Lock className="mr-2 text-gray-400 dark:text-slate-500" size={20} />
             <input
+              id="confirmPassword"
               type={showConfirmPassword ? 'text' : 'password'}
               {...register('confirmPassword')}
-              className="flex-1 bg-transparent outline-none text-sm"
+              className="flex-1 bg-transparent text-sm outline-none dark:text-slate-100 dark:placeholder:text-slate-400"
               placeholder="Confirm Password"
               autoComplete="new-password"
             />
             <button
               type="button"
-              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none"
+              className="ml-2 text-gray-500 hover:text-blue-600 focus:outline-none dark:text-slate-400 dark:hover:text-blue-400"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
             >
               {showConfirmPassword ? (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10a9.96 9.96 0 012.928-7.072m1.414 1.414A7.963 7.963 0 0012 5c4.418 0 8 3.582 8 8 0 1.657-.507 3.197-1.378 4.472M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378" />
-                </svg>
+                <Eye size={20} />
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.832-.642 1.617-1.1 2.336M15.536 15.536A5.978 5.978 0 0112 17c-1.657 0-3.197-.507-4.472-1.378" />
-                </svg>
+                <EyeOff size={20} />
               )}
             </button>
           </div>
@@ -342,12 +347,12 @@ const CompanyRegisterForm = () => {
       </form>
 
       <div className="flex-grow"></div>
-      <p className="text-center text-gray-600 mt-3 text-xs">
+      <p className="mt-3 text-center text-xs text-gray-600 dark:text-slate-300">
         Already have an account?{' '}
         <button
           type="button"
           onClick={() => navigate('/login')}
-          className="text-blue-600 hover:underline font-medium"
+          className="font-medium text-blue-600 hover:underline dark:text-blue-400"
         >
           Log in
         </button>

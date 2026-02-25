@@ -1,47 +1,72 @@
 import React, { useState } from "react";
+import { Minus, Plus } from "lucide-react";
 
 const FAQSection = () => {
   const [openIndex, setOpenIndex] = useState(null);
-  
+
   const faqs = [
-    { question: "How do I create an account?", answer: "Click 'Sign Up' to create your profile. It takes less than 2 minutes!" },
-    { question: "Are all internships verified?", answer: "Yes! All opportunities on InternNepal are verified for legitimacy." },
-    { question: "How do I apply for a job?", answer: "Click 'Apply Now' on any job listing. You can apply with one click if your profile is complete." },
-    { question: "Is InternNepal free for job seekers?", answer: "Yes! Job seekers can use InternNepal completely free." }
+    {
+      question: "How do I create an account?",
+      answer:
+        "Use Sign Up and choose Student or Company. After registration, verify your email to continue.",
+    },
+    {
+      question: "How do I apply for internships?",
+      answer:
+        "Open a job post and click Apply. Your application status updates in your dashboard.",
+    },
+    {
+      question: "What if I find a suspicious job post?",
+      answer:
+        "Use the report option inside the platform. Reported posts are reviewed by admin.",
+    },
+    {
+      question: "Is InternNepal free for students?",
+      answer:
+        "Yes. Students can create profiles, browse internships, save jobs, and apply without payment.",
+    },
   ];
 
   return (
-    <section className="bg-slate-50 py-20 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">
+    <section className="bg-slate-50 px-4 py-20 dark:bg-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-16 text-center">
+          <h2 className="mb-4 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl md:text-5xl">
             Everything You Need to Know About <span className="text-blue-600">InternNepal</span>
           </h2>
         </div>
-        
+
         <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div key={index} className="border border-blue-100 rounded-lg overflow-hidden bg-white shadow-sm">
-              <button
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-                className="w-full flex justify-between items-center bg-blue-50 hover:bg-blue-100 px-6 py-4 transition"
+          {faqs.map((faq, index) => {
+            const isOpen = openIndex === index;
+            return (
+              <div
+                key={index}
+                className="overflow-hidden rounded-lg border border-blue-100 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
               >
-                <p className="font-bold text-slate-900 text-left">{faq.question}</p>
-                <span className="text-blue-600 font-bold">
-                  {openIndex === index ? "−" : "+"}
-                </span>
-              </button>
-              {openIndex === index && (
-                <div className="px-6 py-4 bg-slate-50">
-                  <p className="text-slate-500">{faq.answer}</p>
-                </div>
-              )}
-            </div>
-          ))}
+                <button
+                  onClick={() => setOpenIndex(isOpen ? null : index)}
+                  className="flex w-full items-center justify-between bg-blue-50 px-6 py-4 text-left transition hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                >
+                  <p className="font-bold text-slate-900 dark:text-white">{faq.question}</p>
+                  {isOpen ? (
+                    <Minus size={18} className="shrink-0 text-blue-600" />
+                  ) : (
+                    <Plus size={18} className="shrink-0 text-blue-600" />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="bg-slate-50 px-6 py-4 dark:bg-slate-900">
+                    <p className="text-slate-600 dark:text-slate-300">{faq.answer}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
-	);
+  );
 };
 
 export default FAQSection;

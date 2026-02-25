@@ -49,6 +49,7 @@ Thumbs.db
 
 # Backend-specific builds (if any)
 backend/dist/
+backend/uploads/
 
 # Frontend build (Vite/Vue)
 frontend/dist/

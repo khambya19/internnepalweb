@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist'] }, // Equivalent to globalIgnores
+  { ignores: ['dist', '**/*.css'] }, // JS/JSX only
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -30,24 +30,4 @@ export default [
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
-  // This fixes @tailwind warnings in CSS files
-  {
-    files: ['**/*.css'],
-    rules: {
-      'unknownAtRules': 'off',
-    },
-  },
 ]
-module.exports = {
-  // ... your existing config
-  overrides: [
-    {
-      files: ["*.css"],
-      rules: {
-        // Disable all rules for CSS, or just the problematic ones
-        "no-unused-vars": "off",
-        // Or more targeted if you know the exact rule triggering it
-      },
-    },
-  ],
-};
